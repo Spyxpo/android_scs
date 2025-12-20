@@ -580,6 +580,3 @@ If you're using ProGuard/R8, the SDK includes consumer ProGuard rules automatica
 MIT License - see LICENSE file for details.
 
 ## Support
-
-- [GitHub Issues](https://github.com/AstroX11/SCS/issues)
-- [Documentation](https://docs.spyxpo.com/scs)
