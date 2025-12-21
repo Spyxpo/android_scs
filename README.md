@@ -155,12 +155,44 @@ scs.auth.logout()
 
 ## Database
 
-NoSQL document database with collections and subcollections. SCS supports two database types:
+NoSQL document database with collections and subcollections. SCS supports two powerful database options:
 
-- **eaZI**: Document-based NoSQL with Firestore-like collections, documents, and subcollections (default)
-- **RelaDB**: Relational-style database with tables, columns, and rows
+### Database Types
 
-Configure the backend database type via `DATABASE_TYPE` environment variable (`eazi` or `mongodb`). See the main SCS documentation for details.
+| Type | Name | Description | Best For |
+|------|------|-------------|----------|
+| `eazi` | **eaZI Database** | Document-based NoSQL with Firestore-like collections, documents, and subcollections | Development, prototyping, small to medium apps |
+| `mongodb` | **RelaDB** | Production-grade NoSQL database with relational-style views | Production, scalability, advanced queries |
+
+### Configuration
+
+Configure the backend database type via `DATABASE_TYPE` environment variable:
+
+```env
+# For eaZI Database (default) - No external dependencies
+DATABASE_TYPE=eazi
+
+# For RelaDB (production-grade)
+DATABASE_TYPE=mongodb
+MONGODB_URI=mongodb://localhost:27017/scs_main
+```
+
+### eaZI Database Features
+
+- **Document-based**: Firestore-like collections and documents
+- **Subcollections**: Nested data organization
+- **File-based storage**: No external dependencies required
+- **Zero configuration**: Works out of the box
+- **Query support**: Filtering, ordering, and pagination
+
+### RelaDB Features
+
+- **Production-ready**: Built on MongoDB for reliability and performance
+- **Scalable**: Horizontal scaling and replication support
+- **Advanced queries**: Aggregation pipelines, complex filters
+- **Indexing**: Custom indexes for optimized performance
+- **Schema flexibility**: Dynamic schema with validation support
+- **Relational-style views**: Table view with columns and rows in the console
 
 ### Add a Document
 

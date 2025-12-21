@@ -11,6 +11,13 @@ import com.spyxpo.scs.utils.ScsHttpClient
 /**
  * Service for database operations.
  *
+ * SCS supports two database backends (configured server-side via DATABASE_TYPE):
+ * - **eaZI Database** (DATABASE_TYPE=eazi): File-based NoSQL, ideal for development
+ * - **RelaDB** (DATABASE_TYPE=mongodb): Production-grade NoSQL with advanced features
+ *
+ * The SDK API remains the same regardless of backend - switching databases requires
+ * no client-side code changes.
+ *
  * Example usage:
  * ```kotlin
  * // Get a collection reference
