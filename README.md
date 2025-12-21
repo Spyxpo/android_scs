@@ -155,6 +155,13 @@ scs.auth.logout()
 
 ## Database
 
+NoSQL document database with collections and subcollections. The backend supports multiple database types:
+
+- **NeDB**: File-based NoSQL (default, for development)
+- **MongoDB**: Production-grade NoSQL database
+
+Configure the backend database type via `DATABASE_TYPE` environment variable. See the main SCS documentation for details.
+
 ### Add a Document
 
 ```kotlin
