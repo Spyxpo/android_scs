@@ -545,6 +545,109 @@ lifecycleScope.launch {
 }
 ```
 
+## AI Agents
+
+Create and manage AI agents with custom instructions and tools.
+
+### Create an Agent
+
+```kotlin
+lifecycleScope.launch {
+    val agent = scs.ai.createAgent(
+        name = "Customer Support",
+        instructions = "You are a helpful customer support assistant. Be polite and helpful.",
+        model = "llama3.2",
+        temperature = 0.7
+    )
+    Log.d("SCS", "Created agent: ${agent.id}")
+}
+```
+
+### Run the Agent
+
+```kotlin
+lifecycleScope.launch {
+    // Run the agent
+    var response = scs.ai.runAgent(
+        agentId = agent.id,
+        input = "How do I reset my password?"
+    )
+    Log.d("SCS", "Agent: ${response.output}")
+    Log.d("SCS", "Session: ${response.sessionId}")
+
+    // Continue the conversation in the same session
+    response = scs.ai.runAgent(
+        agentId = agent.id,
+        input = "Thanks! What about enabling 2FA?",
+        sessionId = response.sessionId
+    )
+}
+```
+
+### Manage Agent Sessions
+
+```kotlin
+lifecycleScope.launch {
+    // List agent sessions
+    val sessions = scs.ai.listAgentSessions(agent.id)
+
+    // Get full session history
+    val session = scs.ai.getAgentSession(agent.id, response.sessionId)
+    session.messages.forEach { msg ->
+        Log.d("SCS", "${msg.role}: ${msg.content}")
+    }
+
+    // Delete a session
+    scs.ai.deleteAgentSession(agent.id, response.sessionId)
+}
+```
+
+### Manage Agents
+
+```kotlin
+lifecycleScope.launch {
+    // List agents
+    val agents = scs.ai.listAgents()
+
+    // Update agent
+    scs.ai.updateAgent(
+        agentId = agent.id,
+        instructions = "Updated instructions here",
+        temperature = 0.5
+    )
+
+    // Delete agent
+    scs.ai.deleteAgent(agent.id)
+}
+```
+
+### Agent Tools
+
+```kotlin
+lifecycleScope.launch {
+    // Define a tool for agents
+    val tool = scs.ai.defineTool(
+        name = "get_weather",
+        description = "Get weather for a location",
+        parameters = mapOf(
+            "type" to "object",
+            "properties" to mapOf(
+                "location" to mapOf(
+                    "type" to "string",
+                    "description" to "City name"
+                )
+            )
+        )
+    )
+
+    // List tools
+    val tools = scs.ai.listTools()
+
+    // Delete a tool
+    scs.ai.deleteTool(tool.id)
+}
+```
+
 ## Error Handling
 
 ```kotlin

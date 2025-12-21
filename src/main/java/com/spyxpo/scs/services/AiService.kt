@@ -249,4 +249,277 @@ class AiService(private val httpClient: ScsHttpClient) {
         val request = builder.build()
         return chat(request.messages, request.model, request.temperature, request.maxTokens)
     }
+
+    // ==================== AI AGENTS ====================
+
+    /**
+     * Create a new AI agent
+     *
+     * @param name Agent name
+     * @param instructions System instructions for the agent
+     * @param description Agent description
+     * @param model AI model to use
+     * @param tools List of tool IDs
+     * @param temperature Temperature (0-1)
+     * @param maxTokens Maximum tokens
+     * @param metadata Additional metadata
+     * @return Created agent
+     */
+    suspend fun createAgent(
+        name: String,
+        instructions: String? = null,
+        description: String? = null,
+        model: String? = null,
+        tools: List<String>? = null,
+        temperature: Double? = null,
+        maxTokens: Int? = null,
+        metadata: Map<String, Any?>? = null
+    ): Agent {
+        val body = mutableMapOf<String, Any?>("name" to name)
+        instructions?.let { body["instructions"] = it }
+        description?.let { body["description"] = it }
+        model?.let { body["model"] = it }
+        tools?.let { body["tools"] = it }
+        temperature?.let { body["temperature"] = it }
+        maxTokens?.let { body["maxTokens"] = it }
+        metadata?.let { body["metadata"] = it }
+
+        val response = httpClient.post("/ai/agents", body)
+
+        @Suppress("UNCHECKED_CAST")
+        val map = gson.fromJson<Map<String, Any?>>(response, Map::class.java)
+        val agentMap = map["agent"] as? Map<String, Any?> ?: map
+        return Agent.fromMap(agentMap)
+    }
+
+    /**
+     * List all agents
+     *
+     * @param limit Maximum number of agents
+     * @param offset Number to skip
+     * @param status Filter by status
+     * @return List of agents
+     */
+    suspend fun listAgents(
+        limit: Int? = null,
+        offset: Int? = null,
+        status: String? = null
+    ): List<Agent> {
+        val params = mutableListOf<String>()
+        limit?.let { params.add("limit=$it") }
+        offset?.let { params.add("offset=$it") }
+        status?.let { params.add("status=$it") }
+
+        val queryString = if (params.isNotEmpty()) "?${params.joinToString("&")}" else ""
+        val response = httpClient.get("/ai/agents$queryString")
+
+        val agents = response.getAsJsonArray("agents") ?: JsonArray()
+        return agents.map { element ->
+            @Suppress("UNCHECKED_CAST")
+            val map = gson.fromJson<Map<String, Any?>>(element, Map::class.java)
+            Agent.fromMap(map)
+        }
+    }
+
+    /**
+     * Get an agent by ID
+     *
+     * @param agentId Agent ID
+     * @return Agent details
+     */
+    suspend fun getAgent(agentId: String): Agent {
+        val response = httpClient.get("/ai/agents/$agentId")
+
+        @Suppress("UNCHECKED_CAST")
+        val map = gson.fromJson<Map<String, Any?>>(response.toString(), Map::class.java)
+        val agentMap = map["agent"] as? Map<String, Any?> ?: map
+        return Agent.fromMap(agentMap)
+    }
+
+    /**
+     * Update an agent
+     *
+     * @param agentId Agent ID
+     * @param name Agent name
+     * @param instructions System instructions
+     * @param description Agent description
+     * @param model AI model to use
+     * @param tools List of tool IDs
+     * @param temperature Temperature (0-1)
+     * @param maxTokens Maximum tokens
+     * @param metadata Additional metadata
+     * @param status Agent status
+     * @return Updated agent
+     */
+    suspend fun updateAgent(
+        agentId: String,
+        name: String? = null,
+        instructions: String? = null,
+        description: String? = null,
+        model: String? = null,
+        tools: List<String>? = null,
+        temperature: Double? = null,
+        maxTokens: Int? = null,
+        metadata: Map<String, Any?>? = null,
+        status: String? = null
+    ): Agent {
+        val body = mutableMapOf<String, Any?>()
+        name?.let { body["name"] = it }
+        instructions?.let { body["instructions"] = it }
+        description?.let { body["description"] = it }
+        model?.let { body["model"] = it }
+        tools?.let { body["tools"] = it }
+        temperature?.let { body["temperature"] = it }
+        maxTokens?.let { body["maxTokens"] = it }
+        metadata?.let { body["metadata"] = it }
+        status?.let { body["status"] = it }
+
+        val response = httpClient.put("/ai/agents/$agentId", body)
+
+        @Suppress("UNCHECKED_CAST")
+        val map = gson.fromJson<Map<String, Any?>>(response, Map::class.java)
+        val agentMap = map["agent"] as? Map<String, Any?> ?: map
+        return Agent.fromMap(agentMap)
+    }
+
+    /**
+     * Delete an agent
+     *
+     * @param agentId Agent ID
+     */
+    suspend fun deleteAgent(agentId: String) {
+        httpClient.delete("/ai/agents/$agentId")
+    }
+
+    /**
+     * Run an agent with input
+     *
+     * @param agentId Agent ID
+     * @param input User input message
+     * @param sessionId Session ID for conversation continuity
+     * @param context Additional context data
+     * @return Agent response with output and session ID
+     */
+    suspend fun runAgent(
+        agentId: String,
+        input: String,
+        sessionId: String? = null,
+        context: Map<String, Any?>? = null
+    ): AgentRunResponse {
+        val body = mutableMapOf<String, Any?>("input" to input)
+        sessionId?.let { body["sessionId"] = it }
+        context?.let { body["context"] = it }
+
+        val response = httpClient.post("/ai/agents/$agentId/run", body)
+
+        @Suppress("UNCHECKED_CAST")
+        val map = gson.fromJson<Map<String, Any?>>(response, Map::class.java)
+        return AgentRunResponse.fromMap(map)
+    }
+
+    /**
+     * List sessions for an agent
+     *
+     * @param agentId Agent ID
+     * @param limit Maximum number of sessions
+     * @param offset Number to skip
+     * @return List of sessions
+     */
+    suspend fun listAgentSessions(
+        agentId: String,
+        limit: Int? = null,
+        offset: Int? = null
+    ): List<AgentSession> {
+        val params = mutableListOf<String>()
+        limit?.let { params.add("limit=$it") }
+        offset?.let { params.add("offset=$it") }
+
+        val queryString = if (params.isNotEmpty()) "?${params.joinToString("&")}" else ""
+        val response = httpClient.get("/ai/agents/$agentId/sessions$queryString")
+
+        val sessions = response.getAsJsonArray("sessions") ?: JsonArray()
+        return sessions.map { element ->
+            @Suppress("UNCHECKED_CAST")
+            val map = gson.fromJson<Map<String, Any?>>(element, Map::class.java)
+            AgentSession.fromMap(map)
+        }
+    }
+
+    /**
+     * Get an agent session with full message history
+     *
+     * @param agentId Agent ID
+     * @param sessionId Session ID
+     * @return Session with messages
+     */
+    suspend fun getAgentSession(agentId: String, sessionId: String): AgentSession {
+        val response = httpClient.get("/ai/agents/$agentId/sessions/$sessionId")
+
+        @Suppress("UNCHECKED_CAST")
+        val map = gson.fromJson<Map<String, Any?>>(response.toString(), Map::class.java)
+        val sessionMap = map["session"] as? Map<String, Any?> ?: map
+        return AgentSession.fromMap(sessionMap)
+    }
+
+    /**
+     * Delete an agent session
+     *
+     * @param agentId Agent ID
+     * @param sessionId Session ID
+     */
+    suspend fun deleteAgentSession(agentId: String, sessionId: String) {
+        httpClient.delete("/ai/agents/$agentId/sessions/$sessionId")
+    }
+
+    // Agent Tools
+
+    /**
+     * Define a tool that agents can use
+     *
+     * @param name Tool name
+     * @param description Tool description
+     * @param parameters JSON schema for tool parameters
+     * @return Created tool
+     */
+    suspend fun defineTool(
+        name: String,
+        description: String? = null,
+        parameters: Map<String, Any?>? = null
+    ): AgentTool {
+        val body = mutableMapOf<String, Any?>("name" to name)
+        description?.let { body["description"] = it }
+        parameters?.let { body["parameters"] = it }
+
+        val response = httpClient.post("/ai/tools", body)
+
+        @Suppress("UNCHECKED_CAST")
+        val map = gson.fromJson<Map<String, Any?>>(response, Map::class.java)
+        val toolMap = map["tool"] as? Map<String, Any?> ?: map
+        return AgentTool.fromMap(toolMap)
+    }
+
+    /**
+     * List all defined tools
+     *
+     * @return List of tools
+     */
+    suspend fun listTools(): List<AgentTool> {
+        val response = httpClient.get("/ai/tools")
+
+        val tools = response.getAsJsonArray("tools") ?: JsonArray()
+        return tools.map { element ->
+            @Suppress("UNCHECKED_CAST")
+            val map = gson.fromJson<Map<String, Any?>>(element, Map::class.java)
+            AgentTool.fromMap(map)
+        }
+    }
+
+    /**
+     * Delete a tool
+     *
+     * @param toolId Tool ID
+     */
+    suspend fun deleteTool(toolId: String) {
+        httpClient.delete("/ai/tools/$toolId")
+    }
 }

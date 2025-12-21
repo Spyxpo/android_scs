@@ -210,3 +210,190 @@ data class ModelsListResponse(
     @SerializedName("models")
     val models: List<AiModel>
 )
+
+// ==================== AI AGENTS ====================
+
+/**
+ * An AI agent.
+ */
+data class Agent(
+    @SerializedName("agentId")
+    val id: String,
+
+    @SerializedName("name")
+    val name: String,
+
+    @SerializedName("description")
+    val description: String? = null,
+
+    @SerializedName("instructions")
+    val instructions: String? = null,
+
+    @SerializedName("model")
+    val model: String? = null,
+
+    @SerializedName("tools")
+    val tools: List<String> = emptyList(),
+
+    @SerializedName("temperature")
+    val temperature: Double? = null,
+
+    @SerializedName("maxTokens")
+    val maxTokens: Int? = null,
+
+    @SerializedName("metadata")
+    val metadata: Map<String, Any?>? = null,
+
+    @SerializedName("status")
+    val status: String = "active",
+
+    @SerializedName("createdAt")
+    val createdAt: String? = null,
+
+    @SerializedName("updatedAt")
+    val updatedAt: String? = null
+) {
+    companion object {
+        @Suppress("UNCHECKED_CAST")
+        fun fromMap(map: Map<String, Any?>): Agent {
+            return Agent(
+                id = map["agentId"] as? String ?: map["_id"] as? String ?: "",
+                name = map["name"] as? String ?: "",
+                description = map["description"] as? String,
+                instructions = map["instructions"] as? String,
+                model = map["model"] as? String,
+                tools = (map["tools"] as? List<*>)?.mapNotNull { it as? String } ?: emptyList(),
+                temperature = (map["temperature"] as? Number)?.toDouble(),
+                maxTokens = (map["maxTokens"] as? Number)?.toInt(),
+                metadata = map["metadata"] as? Map<String, Any?>,
+                status = map["status"] as? String ?: "active",
+                createdAt = map["createdAt"] as? String,
+                updatedAt = map["updatedAt"] as? String
+            )
+        }
+    }
+}
+
+/**
+ * An agent session.
+ */
+data class AgentSession(
+    @SerializedName("sessionId")
+    val sessionId: String,
+
+    @SerializedName("agentId")
+    val agentId: String,
+
+    @SerializedName("messages")
+    val messages: List<ChatMessage> = emptyList(),
+
+    @SerializedName("context")
+    val context: Map<String, Any?>? = null,
+
+    @SerializedName("messageCount")
+    val messageCount: Int = 0,
+
+    @SerializedName("createdAt")
+    val createdAt: String? = null,
+
+    @SerializedName("updatedAt")
+    val updatedAt: String? = null
+) {
+    companion object {
+        @Suppress("UNCHECKED_CAST")
+        fun fromMap(map: Map<String, Any?>): AgentSession {
+            val messagesRaw = map["messages"] as? List<*> ?: emptyList<Any>()
+            val messages = messagesRaw.mapNotNull { m ->
+                (m as? Map<String, Any?>)?.let {
+                    ChatMessage(
+                        role = it["role"] as? String ?: "user",
+                        content = it["content"] as? String ?: ""
+                    )
+                }
+            }
+
+            return AgentSession(
+                sessionId = map["sessionId"] as? String ?: "",
+                agentId = map["agentId"] as? String ?: "",
+                messages = messages,
+                context = map["context"] as? Map<String, Any?>,
+                messageCount = (map["messageCount"] as? Number)?.toInt() ?: messages.size,
+                createdAt = map["createdAt"] as? String,
+                updatedAt = map["updatedAt"] as? String
+            )
+        }
+    }
+}
+
+/**
+ * Response from running an agent.
+ */
+data class AgentRunResponse(
+    @SerializedName("output")
+    val output: String,
+
+    @SerializedName("sessionId")
+    val sessionId: String,
+
+    @SerializedName("agentId")
+    val agentId: String,
+
+    @SerializedName("model")
+    val model: String? = null,
+
+    @SerializedName("tokensUsed")
+    val tokensUsed: Int? = null,
+
+    @SerializedName("processingTime")
+    val processingTime: Int? = null
+) {
+    companion object {
+        fun fromMap(map: Map<String, Any?>): AgentRunResponse {
+            return AgentRunResponse(
+                output = map["output"] as? String ?: "",
+                sessionId = map["sessionId"] as? String ?: "",
+                agentId = map["agentId"] as? String ?: "",
+                model = map["model"] as? String,
+                tokensUsed = (map["tokensUsed"] as? Number)?.toInt(),
+                processingTime = (map["processingTime"] as? Number)?.toInt()
+            )
+        }
+    }
+}
+
+/**
+ * An agent tool.
+ */
+data class AgentTool(
+    @SerializedName("toolId")
+    val id: String,
+
+    @SerializedName("name")
+    val name: String,
+
+    @SerializedName("description")
+    val description: String? = null,
+
+    @SerializedName("parameters")
+    val parameters: Map<String, Any?>? = null,
+
+    @SerializedName("status")
+    val status: String = "active",
+
+    @SerializedName("createdAt")
+    val createdAt: String? = null
+) {
+    companion object {
+        @Suppress("UNCHECKED_CAST")
+        fun fromMap(map: Map<String, Any?>): AgentTool {
+            return AgentTool(
+                id = map["toolId"] as? String ?: map["_id"] as? String ?: "",
+                name = map["name"] as? String ?: "",
+                description = map["description"] as? String,
+                parameters = map["parameters"] as? Map<String, Any?>,
+                status = map["status"] as? String ?: "active",
+                createdAt = map["createdAt"] as? String
+            )
+        }
+    }
+}
