@@ -162,19 +162,40 @@ NoSQL document database with collections and subcollections. SCS supports two po
 | Type | Name | Description | Best For |
 |------|------|-------------|----------|
 | `eazi` | **eaZI Database** | Document-based NoSQL with Firestore-like collections, documents, and subcollections | Development, prototyping, small to medium apps |
-| `mongodb` | **RelaDB** | Production-grade NoSQL database with relational-style views | Production, scalability, advanced queries |
+| `reladb` | **RelaDB** | Production-grade NoSQL database with relational-style views | Production, scalability, advanced queries |
 
-### Configuration
+### Initialize with eaZI (Default)
 
-Configure the backend database type via `DATABASE_TYPE` environment variable:
+```kotlin
+import com.spyxpo.scs.Scs
+import com.spyxpo.scs.ScsConfig
 
-```env
-# For eaZI Database (default) - No external dependencies
-DATABASE_TYPE=eazi
+// eaZI is the default database - no special configuration needed
+Scs.initialize(
+    context = this,
+    config = ScsConfig(
+        projectId = "your-project-id",
+        apiKey = "your-api-key"
+        // databaseType = "eazi" is implicit
+    )
+)
+```
 
-# For RelaDB (production-grade)
-DATABASE_TYPE=mongodb
-MONGODB_URI=mongodb://localhost:27017/scs_main
+### Initialize with RelaDB (Production)
+
+```kotlin
+import com.spyxpo.scs.Scs
+import com.spyxpo.scs.ScsConfig
+
+// Use RelaDB for production
+Scs.initialize(
+    context = this,
+    config = ScsConfig(
+        projectId = "your-project-id",
+        apiKey = "your-api-key",
+        databaseType = "reladb"  // Enable RelaDB
+    )
+)
 ```
 
 ### eaZI Database Features
@@ -187,97 +208,163 @@ MONGODB_URI=mongodb://localhost:27017/scs_main
 
 ### RelaDB Features
 
-- **Production-ready**: Built on MongoDB for reliability and performance
+- **Production-ready**: Built for reliability and performance
 - **Scalable**: Horizontal scaling and replication support
 - **Advanced queries**: Aggregation pipelines, complex filters
 - **Indexing**: Custom indexes for optimized performance
 - **Schema flexibility**: Dynamic schema with validation support
 - **Relational-style views**: Table view with columns and rows in the console
 
-### Add a Document
+### Collection Operations
 
 ```kotlin
 lifecycleScope.launch {
+    // Get a collection reference
+    val users = scs.database.collection("users")
+
+    // List all collections
+    val collections = scs.database.listCollections()
+
+    // Create a collection
+    scs.database.createCollection("newCollection")
+
+    // Delete a collection
+    scs.database.deleteCollection("oldCollection")
+}
+```
+
+### Document Operations
+
+```kotlin
+lifecycleScope.launch {
+    // Add document with auto-generated ID
     val doc = scs.database.collection("users").add(
         mapOf(
             "name" to "John Doe",
             "email" to "john@example.com",
-            "age" to 30
+            "age" to 30,
+            "tags" to listOf("developer", "kotlin"),
+            "profile" to mapOf(
+                "bio" to "Software developer",
+                "avatar" to "https://example.com/avatar.jpg"
+            )
         )
     )
     Log.d("SCS", "Document ID: ${doc.id}")
-}
-```
 
-### Get Documents
+    // Set document with custom ID (creates or overwrites)
+    scs.database.collection("users").doc("user-123").set(
+        mapOf(
+            "name" to "Jane Doe",
+            "email" to "jane@example.com"
+        )
+    )
 
-```kotlin
-lifecycleScope.launch {
-    val users = scs.database.collection("users").get()
-    users.forEach { doc ->
-        Log.d("SCS", "User: ${doc.getString("name")}")
+    // Get a single document
+    val user = scs.database.collection("users").doc("user-123").get()
+    user?.let {
+        Log.d("SCS", "Name: ${it.getString("name")}")
     }
+
+    // Update document (partial update)
+    scs.database.collection("users").doc("user-123").update(
+        mapOf(
+            "age" to 31,
+            "profile.bio" to "Senior developer"
+        )
+    )
+
+    // Delete document
+    scs.database.collection("users").doc("user-123").delete()
 }
 ```
 
-### Query with Filters
+### Query Operations
 
 ```kotlin
 lifecycleScope.launch {
-    val adults = scs.database.collection("users")
+    // Simple query with single filter
+    val activeUsers = scs.database.collection("users")
+        .where("status", "==", "active")
+        .get()
+
+    // Multiple filters
+    val results = scs.database.collection("users")
         .where("age", ">=", 18)
-        .orderBy("name", "asc")
+        .where("status", "==", "active")
+        .get()
+
+    // Ordering and pagination
+    val posts = scs.database.collection("posts")
+        .where("published", "==", true)
+        .orderBy("createdAt", "desc")
         .limit(10)
+        .skip(20)
+        .get()
+
+    // Using 'in' operator
+    val featured = scs.database.collection("posts")
+        .where("category", "in", listOf("tech", "science", "news"))
+        .get()
+
+    // Using 'contains' for array fields
+    val tagged = scs.database.collection("posts")
+        .where("tags", "contains", "kotlin")
         .get()
 }
 ```
 
-### Get a Specific Document
+### Query Operators
 
-```kotlin
-lifecycleScope.launch {
-    val user = scs.database.collection("users").doc("userId").get()
-    user?.let {
-        Log.d("SCS", "Name: ${it.getString("name")}")
-    }
-}
-```
-
-### Update a Document
-
-```kotlin
-lifecycleScope.launch {
-    scs.database.collection("users").doc("userId").update(
-        mapOf("name" to "Jane Doe")
-    )
-}
-```
-
-### Delete a Document
-
-```kotlin
-lifecycleScope.launch {
-    scs.database.collection("users").doc("userId").delete()
-}
-```
+| Operator | Description | Example |
+|----------|-------------|---------|
+| `==` | Equal to | `.where("status", "==", "active")` |
+| `!=` | Not equal to | `.where("status", "!=", "deleted")` |
+| `>` | Greater than | `.where("age", ">", 18)` |
+| `>=` | Greater than or equal | `.where("age", ">=", 18)` |
+| `<` | Less than | `.where("price", "<", 100)` |
+| `<=` | Less than or equal | `.where("price", "<=", 50)` |
+| `in` | Value in array | `.where("status", "in", listOf("active", "pending"))` |
+| `contains` | Array contains value | `.where("tags", "contains", "featured")` |
 
 ### Subcollections
 
 ```kotlin
 lifecycleScope.launch {
     // Access a subcollection
-    val posts = scs.database
+    val postsRef = scs.database
         .collection("users")
         .doc("userId")
         .collection("posts")
-        .get()
 
     // Add to subcollection
-    scs.database
+    val post = postsRef.add(
+        mapOf(
+            "title" to "My First Post",
+            "content" to "Hello World!",
+            "createdAt" to System.currentTimeMillis()
+        )
+    )
+
+    // Query subcollection
+    val userPosts = postsRef
+        .orderBy("createdAt", "desc")
+        .limit(5)
+        .get()
+
+    // Nested subcollections (e.g., users/userId/posts/postId/comments)
+    val commentsRef = scs.database
         .collection("users")
         .doc("userId")
         .collection("posts")
-        .add(mapOf("title" to "My First Post"))
+        .doc("postId")
+        .collection("comments")
+
+    // List subcollections of a document
+    val subcollections = scs.database
+        .collection("users")
+        .doc("userId")
+        .listCollections()
 }
 ```
 
