@@ -522,4 +522,67 @@ class AiService(private val httpClient: ScsHttpClient) {
     suspend fun deleteTool(toolId: String) {
         httpClient.delete("/ai/tools/$toolId")
     }
+
+    // ==================== TTS & STT ====================
+
+    /**
+     * Convert text to speech
+     *
+     * @param text Text to convert to speech
+     * @param voice Optional voice preset (defaults to 'v2/en_speaker_6')
+     * @return TTSResponse with base64 encoded audio data
+     */
+    suspend fun textToSpeech(
+        text: String,
+        voice: String? = null
+    ): TTSResponse {
+        val body = buildJsonObject {
+            put("text", text)
+            voice?.let { put("voice", it) }
+        }
+
+        val response = httpClient.post("/ai/tts", body)
+        return TTSResponse(
+            success = response["success"]?.asBoolean ?: false,
+            audio = response["audio"]?.asString ?: "",
+            format = response["format"]?.asString ?: "wav",
+            sampleRate = response["sample_rate"]?.asInt ?: 24000
+        )
+    }
+
+    /**
+     * Convert speech to text
+     *
+     * @param audio Base64 encoded audio data
+     * @return STTResponse with transcribed text
+     */
+    suspend fun speechToText(audio: String): STTResponse {
+        val body = buildJsonObject {
+            put("audio", audio)
+        }
+
+        val response = httpClient.post("/ai/stt", body)
+        return STTResponse(
+            success = response["success"]?.asBoolean ?: false,
+            text = response["text"]?.asString ?: ""
+        )
+    }
 }
+
+/**
+ * TTS response data class
+ */
+data class TTSResponse(
+    val success: Boolean,
+    val audio: String,
+    val format: String,
+    val sampleRate: Int
+)
+
+/**
+ * STT response data class
+ */
+data class STTResponse(
+    val success: Boolean,
+    val text: String
+)
