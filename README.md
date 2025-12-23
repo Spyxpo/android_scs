@@ -2310,7 +2310,7 @@ lifecycleScope.launch {
 
     if (result.success) {
         val data = result.getDataAsMap()
-        Log.d("SCS", "Payment ID: ${data?.get("paymentId")}")
+        Log.d("SCS", "Data: ${data}")
     } else {
         Log.e("SCS", "Error: ${result.error}")
     }
