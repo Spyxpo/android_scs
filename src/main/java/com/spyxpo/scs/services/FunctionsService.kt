@@ -13,19 +13,19 @@ import com.spyxpo.scs.utils.ScsHttpClient
  * Example usage:
  * ```kotlin
  * // Call a function
- * val result = scs.functions.call("processPayment", mapOf(
- *     "amount" to 100,
- *     "currency" to "USD"
+ * val result = scs.functions.call("processData", mapOf(
+ *     "value" to 100,
+ *     "type" to "analytics"
  * ))
  *
  * if (result.success) {
  *     val data = result.getDataAsMap()
- *     println("Payment ID: ${data?.get("paymentId")}")
+ *     println("Result: ${data?.get("result")}")
  * }
  *
  * // Get a callable reference
- * val processPayment = scs.functions.httpsCallable("processPayment")
- * val result = processPayment.call(mapOf("amount" to 100))
+ * val processData = scs.functions.httpsCallable("processData")
+ * val result = processData.call(mapOf("value" to 100))
  *
  * // List functions
  * val functions = scs.functions.list()
