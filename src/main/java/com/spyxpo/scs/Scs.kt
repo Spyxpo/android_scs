@@ -84,6 +84,11 @@ class Scs private constructor(
     val ai: AiService by lazy { AiService(httpClient) }
 
     /**
+     * Call service for voice/video calls, group calls, and live streaming
+     */
+    val calls: CallService by lazy { CallService(httpClient, config) }
+
+    /**
      * Check if a user is currently logged in
      */
     fun isLoggedIn(): Boolean = sessionStorage.getToken() != null
