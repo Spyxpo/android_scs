@@ -567,6 +567,46 @@ class AiService(private val httpClient: ScsHttpClient) {
             text = response["text"]?.asString ?: ""
         )
     }
+
+    // ==================== PROVIDER SETTINGS ====================
+
+    /**
+     * Get the LLM provider configured for this project.
+     *
+     * Supported providers: huggingface, openai, groq, anthropic, google,
+     *   together, mistral, openrouter, custom
+     *
+     * @return Map with "settings" (current config) and "supportedProviders" list.
+     *         The API key is never returned — check "hasApiKey" instead.
+     */
+    suspend fun getProviderSettings(): Map<String, Any?> {
+        return httpClient.get("/ai/settings/provider")
+    }
+
+    /**
+     * Configure which LLM provider this project uses.
+     *
+     * @param input [UpdateProviderInput] with provider, apiKey, and optional model/baseUrl.
+     * @return Map with "message" confirming the update.
+     *
+     * Example:
+     * ```kotlin
+     * scs.ai.updateProviderSettings(UpdateProviderInput(
+     *     provider = "huggingface",
+     *     apiKey   = "hf_...",
+     *     model    = "meta-llama/Llama-3.2-3B-Instruct"
+     * ))
+     * ```
+     */
+    suspend fun updateProviderSettings(input: UpdateProviderInput): Map<String, Any?> {
+        val body = buildJsonObject {
+            put("provider", input.provider)
+            put("apiKey", input.apiKey)
+            input.model?.let { put("model", it) }
+            input.baseUrl?.let { put("baseUrl", it) }
+        }
+        return httpClient.put("/ai/settings/provider", body)
+    }
 }
 
 /**
@@ -585,4 +625,35 @@ data class TTSResponse(
 data class STTResponse(
     val success: Boolean,
     val text: String
+)
+
+// ==================== PROVIDER SETTINGS ====================
+
+/**
+ * Current LLM provider configuration for a project.
+ * The API key is never returned — only [hasApiKey] indicates one is set.
+ */
+data class AiProviderSettings(
+    val provider: String,
+    val model: String,
+    val baseUrl: String,
+    val hasApiKey: Boolean
+)
+
+/**
+ * Input for updating the LLM provider configuration.
+ *
+ * Supported providers: huggingface, openai, groq, anthropic, google,
+ *   together, mistral, openrouter, custom
+ */
+data class UpdateProviderInput(
+    /** Provider ID — e.g. "huggingface", "openai", "groq" */
+    val provider: String,
+    /** API key or token for the provider.
+     *  Hugging Face: get a free token at huggingface.co/settings/tokens */
+    val apiKey: String,
+    /** Default model ID (optional; provider default used if null) */
+    val model: String? = null,
+    /** Custom base URL — only needed when provider = "custom" */
+    val baseUrl: String? = null
 )
